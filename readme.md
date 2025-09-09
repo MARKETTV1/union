@@ -5,4 +5,4 @@ wget -q "--no-check-certificate" https://raw.githubusercontent.com/MARKETTV1/uni
 
 ### Stalker.json sciprt
 
-wget -q "--no-check-certificate" https://raw.githubusercontent.com/MARKETTV1/union/refs/heads/main/stalker_install.sh -O - | /bin/sh
+wget -q "--no-check-certificate" https://raw.githubusercontent.com/MARKETTV1/union/refs/heads/main/stalker_json.sh -O - | /bin/sh
