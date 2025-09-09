@@ -8,5 +8,9 @@
         "SERVER_NAME": "strong4k",
         "SERVER_HOST": "http://brekna.club/c/",
         "ADRESS_MAC": "00:1A:79:DC:95:4E"
-    }
+    },
+    {
+        "SERVER_NAME": "dino",
+        "SERVER_HOST": "http://dino10.noahtv.online:80/c/",
+        "ADRESS_MAC": "00:1A:79:b8:a1:5b"
 ]
