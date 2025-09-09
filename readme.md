@@ -1,1 +1,3 @@
-https://github.com/MARKETTV1/union/raw/refs/heads/main/Uni_Stalker.tar.gz
+
+Uni_Stalker v1.0
+wget -q "--no-check-certificate" https://raw.githubusercontent.com/MARKETTV1/union/refs/heads/main/install.sh -O - | /bin/sh
