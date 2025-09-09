@@ -1,115 +1,108 @@
-
 #!/bin/sh
+# Uni_Stalker Install Script for Enigma2
 
-# ألوان للoutput
+# Configuration
+IP_RECEIVER="192.168.1.100"  # Change this to your receiver's IP
+TARGET_DIR="/usr/lib/enigma2/python/Plugins/Extensions"
+DOWNLOAD_URL="https://github.com/MARKETTV1/union/raw/refs/heads/main/Uni_Stalker.tar.gz"
+TEMP_FILE="/tmp/Uni_Stalker.tar.gz"
+
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# متغيرات
-INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/MARKETTV1/Uni_Stalker/refs/heads/main/install.sh"
-TEMP_DIR="/tmp"
-TARGET_DIR="/usr/lib/enigma2/python/Plugins/Extensions"
-
-# دالة للطباعة الملونة
+# Function to print colored output
 print_status() {
-    echo "${GREEN}✅ $1${NC}"
+    echo -e "${GREEN}[INFO]${NC} $1"
 }
 
 print_error() {
-    echo "${RED}❌ $1${NC}"
+    echo -e "${RED}[ERROR]${NC} $1"
 }
 
 print_warning() {
-    echo "${YELLOW}⚠️  $1${NC}"
+    echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-print_info() {
-    echo "${BLUE}ℹ️  $1${NC}"
-}
-
-# التحقق من صلاحية root
-if [ $(id -u) -ne 0 ]; then
-    print_error "يجب تشغيل السكريبت كـ root أو باستخدام sudo"
+# Check if IP is set
+if [ "$IP_RECEIVER" = "192.168.1.100" ]; then
+    print_error "Please set the correct IP address of your receiver in the script!"
     exit 1
 fi
 
-print_info "بدء تثبيت Uni_Stalker..."
-
-# الخطوة 1: التحقق من الأدوات المطلوبة
-print_info "التحقق من الأدوات المطلوبة..."
-if ! command -v wget >/dev/null 2>&1; then
-    print_warning "wget غير مثبت. جاري التثبيت..."
-    opkg update >/dev/null 2>&1 && opkg install wget >/dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        print_error "فشل في تثبيت wget"
-        exit 1
-    fi
-fi
-
-if ! command -v tar >/dev/null 2>&1; then
-    print_error "tar غير مثبت"
-    exit 1
-fi
-
-# الخطوة 2: تحميل سكريبت التثبيت
-print_info "جاري تحميل سكريبت التثبيت..."
-wget -q "$INSTALL_SCRIPT_URL" -O "$TEMP_DIR/install.sh"
-
+# Check SSH connection
+print_status "Checking SSH connection to $IP_RECEIVER..."
+ssh root@$IP_RECEIVER "echo 'SSH connection successful'" > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-    print_error "فشل في تحميل سكريبت التثبيت"
+    print_error "Cannot connect to receiver via SSH. Please check:"
+    print_error "- IP address: $IP_RECEIVER"
+    print_error "- SSH service is running on receiver"
+    print_error "- Password is correct (usually 'dreambox' or 'root')"
     exit 1
 fi
 
-print_status "تم تحميل سكريبت التثبيت بنجاح"
-
-# الخطوة 3: جعل السكريبت قابلاً للتنفيذ
-chmod +x "$TEMP_DIR/install.sh"
-
-# الخطوة 4: تشغيل سكريبت التثبيت الأصلي
-print_info "جاري تشغيل سكريبت التثبيت الأصلي..."
-"$TEMP_DIR/install.sh"
-
+# Check if target directory exists
+print_status "Checking target directory..."
+ssh root@$IP_RECEIVER "[ -d '$TARGET_DIR' ]" 
 if [ $? -ne 0 ]; then
-    print_error "فشل سكريبت التثبيت الأصلي"
+    print_error "Target directory $TARGET_DIR does not exist on the receiver!"
     exit 1
 fi
 
-# الخطوة 5: التحقق من التثبيت
-print_info "جاري التحقق من التثبيت النهائي..."
+# Check available space
+print_status "Checking available space..."
+AVAILABLE_SPACE=$(ssh root@$IP_RECEIVER "df $TARGET_DIR | tail -1 | awk '{print \$4}'")
+if [ "$AVAILABLE_SPACE" -lt 5000 ]; then
+    print_warning "Low disk space available: ${AVAILABLE_SPACE}KB"
+fi
 
-if [ -d "$TARGET_DIR/Uni_Stalker" ]; then
-    print_status "✅ تم التثبيت بنجاح!"
-    echo ""
-    print_info "المسار: $TARGET_DIR/Uni_Stalker"
-    print_info "حجم المجلد: $(du -sh $TARGET_DIR/Uni_Stalker 2>/dev/null | cut -f1 || echo 'غير معروف')"
+# Download and install
+print_status "Downloading Uni_Stalker from GitHub..."
+ssh root@$IP_RECEIVER "
+cd '$TARGET_DIR' && \
+wget -q '$DOWNLOAD_URL' -O '$TEMP_FILE'
+
+if [ \$? -ne 0 ]; then
+    echo 'Download failed!'
+    exit 1
+fi
+
+print_status 'Extracting files...'
+tar -xzf '$TEMP_FILE' -C '$TARGET_DIR'
+
+if [ \$? -ne 0 ]; then
+    echo 'Extraction failed!'
+    rm -f '$TEMP_FILE'
+    exit 1
+fi
+
+print_status 'Setting permissions...'
+chmod -R 755 '$TARGET_DIR/Uni_Stalker/'
+
+print_status 'Cleaning up...'
+rm -f '$TEMP_FILE'
+
+echo 'Installation completed successfully!'
+"
+
+# Check if installation was successful
+if [ $? -eq 0 ]; then
+    print_status "Uni_Stalker installed successfully!"
     
-    # عرض محتويات المجلد
-    echo ""
-    print_info "محتويات المجلد المثبت:"
-    ls -la "$TARGET_DIR/Uni_Stalker"
+    # Ask to restart Enigma2
+    echo
+    read -p "Do you want to restart Enigma2? (y/n): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        print_status "Restarting Enigma2..."
+        ssh root@$IP_RECEIVER "init 4 && sleep 3 && init 3"
+        print_status "Enigma2 restarted!"
+    fi
+    
+    print_status "Installation complete! Check your plugins menu."
 else
-    print_warning "لم يتم العثور على المجلد في المسار المتوقع"
-    print_info "جاري البحث في النظام..."
-    
-    # البحث عن الملفات المثبتة
-    FIND_RESULT=$(find /usr -name "*Stalker*" -type d 2>/dev/null | head -1)
-    if [ -n "$FIND_RESULT" ]; then
-        print_status "تم العثور على البلوجين في: $FIND_RESULT"
-    else
-        print_error "لم يتم العثور على البلوجين في النظام"
-    fi
+    print_error "Installation failed!"
+    exit 1
 fi
-
-# الخطوة 6: التنظيف
-print_info "جاري التنظيف..."
-rm -f "$TEMP_DIR/install.sh"
-
-echo ""
-print_warning "يرجى إعادة تشغيل enigma2 لتطبيق التغييرات:"
-echo "init 4 && sleep 2 && init 3"
-echo "أو إعادة تشغيل الجهاز"
-
-print_status "🎉 عملية التثبيت اكتملت!"
