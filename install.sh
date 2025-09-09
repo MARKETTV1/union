@@ -2,7 +2,7 @@
 # Uni_Stalker Install Script for Enigma2
 
 # Configuration
-IP_RECEIVER="192.168.1.100"  # Change this to your receiver's IP
+IP_RECEIVER="192.168.4.153"  # Change this to your receiver's IP
 TARGET_DIR="/usr/lib/enigma2/python/Plugins/Extensions"
 DOWNLOAD_URL="https://github.com/MARKETTV1/union/raw/refs/heads/main/Uni_Stalker.tar.gz"
 TEMP_FILE="/tmp/Uni_Stalker.tar.gz"
