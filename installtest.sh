@@ -43,6 +43,7 @@ progress_bar() {
 clear
 echo "=============================================="
 echo "    Uni_Stalker Installation Script"
+echo "          Uni_Stalker V1.0"
 echo "=============================================="
 echo ""
 
